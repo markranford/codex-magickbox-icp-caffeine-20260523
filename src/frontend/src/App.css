@@ -1209,7 +1209,7 @@ textarea:focus-visible {
 
 .funding-target-row {
   display: grid;
-  grid-template-columns: minmax(120px, 0.28fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 12px;
@@ -1219,6 +1219,7 @@ textarea:focus-visible {
 }
 
 .funding-target-label {
+  grid-column: 1 / -1;
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
@@ -1228,7 +1229,7 @@ textarea:focus-visible {
   min-width: 0;
   color: var(--text);
   font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
