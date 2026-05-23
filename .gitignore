@@ -3,3 +3,4 @@ dist/
 .mops/
 .icp/
 *.log
+src/frontend/public/env.json
