@@ -1,0 +1,25 @@
+{
+  "overview": "A Caffeine-native control center for the isolated Magick Box on ICP prototype — configure external ICP canisters, manage provider endpoints, create payment intents, and explore the Magick Box UX without touching production systems.",
+  "features": [
+    "Dark Magick Box UI shell with hero and navigation",
+    "Magick Friend composer with Image, Video, and Music modes",
+    "ICP canister configuration for core, media, ledger, ad verifier, and AI worker",
+    "Provider settings for FreeLLMAPI, OpenAI-compatible, MagickAI, and Ollama endpoints",
+    "Payment intent management with ICRC-2 transfer-from payloads and manual verification",
+    "icp-media:// manifest import and display",
+    "Gallery of locally generated media with job metadata",
+    "Job history with prompt, mode, provider, and status",
+    "System status dashboard showing live vs. external ICP vs. user-required features",
+    "Deployment checklist mapping control center features to real ICP canister steps"
+  ],
+  "category": "control-panel",
+  "tags": [
+    "icp",
+    "magick-box",
+    "web3",
+    "control-center",
+    "dark-theme",
+    "prototype"
+  ],
+  "last_updated": "2026-05-22T14:44:22.895Z"
+}
