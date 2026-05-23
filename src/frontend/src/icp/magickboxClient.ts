@@ -1,0 +1,213 @@
+import { AuthClient } from "@icp-sdk/auth/client";
+import {
+  Actor,
+  HttpAgent,
+  type ActorSubclass,
+  type Identity,
+} from "@icp-sdk/core/agent";
+import { safeGetCanisterEnv } from "@icp-sdk/core/agent/canister-env";
+import { Ed25519KeyIdentity } from "@icp-sdk/core/identity";
+import {
+  idlFactory,
+  type _SERVICE,
+} from "./generated/magickbox_core.did";
+import {
+  idlFactory as mediaIdlFactory,
+  type _SERVICE as MediaService,
+} from "./generated/magickbox_media.did";
+
+type MagickBoxCanisterEnv = {
+  readonly "PUBLIC_CANISTER_ID:magickbox_core"?: string;
+  readonly "PUBLIC_CANISTER_ID:magickbox_media"?: string;
+  readonly "PUBLIC_CANISTER_ID:backend"?: string;
+};
+
+export type CoreActor = ActorSubclass<_SERVICE>;
+export type MediaActor = ActorSubclass<MediaService>;
+
+export type IcpRuntime = {
+  canisterId: string | null;
+  mediaCanisterId: string | null;
+  host: string;
+  identityProvider: string;
+  rootKey?: Uint8Array;
+  reason: string;
+};
+
+type ViteCanisterEnv = {
+  readonly VITE_MAGICKBOX_CORE_CANISTER_ID?: string;
+  readonly VITE_MAGICKBOX_MEDIA_CANISTER_ID?: string;
+  readonly VITE_CAFFEINE_BACKEND_CANISTER_ID?: string;
+};
+
+const eightHoursInNanoseconds = BigInt(8) * BigInt(3_600_000_000_000);
+const localIdentityStorageKey = "magickbox.localBrowserIdentity.v1";
+const localIdentityActiveStorageKey = "magickbox.localBrowserIdentity.active.v1";
+
+function currentOrigin() {
+  if (typeof window === "undefined") {
+    return "http://127.0.0.1:8010";
+  }
+
+  return window.location.origin;
+}
+
+function localIdentityProvider() {
+  if (typeof window === "undefined") {
+    return "http://id.ai.localhost:8010";
+  }
+
+  const port = window.location.port || "8000";
+  return `http://id.ai.localhost:${port}`;
+}
+
+export function getIdentityProviderUrl() {
+  if (typeof window === "undefined") {
+    return "https://id.ai";
+  }
+
+  const host = window.location.hostname;
+  const isLocal =
+    host === "localhost" || host === "127.0.0.1" || host.endsWith(".localhost");
+
+  return isLocal ? localIdentityProvider() : "https://id.ai";
+}
+
+export function resolveCanisterIds(
+  env?: MagickBoxCanisterEnv | null,
+  viteEnv: ViteCanisterEnv = import.meta.env as ViteCanisterEnv,
+) {
+  return {
+    canisterId:
+      env?.["PUBLIC_CANISTER_ID:magickbox_core"] ??
+      env?.["PUBLIC_CANISTER_ID:backend"] ??
+      viteEnv.VITE_MAGICKBOX_CORE_CANISTER_ID ??
+      viteEnv.VITE_CAFFEINE_BACKEND_CANISTER_ID ??
+      null,
+    mediaCanisterId:
+      env?.["PUBLIC_CANISTER_ID:magickbox_media"] ??
+      viteEnv.VITE_MAGICKBOX_MEDIA_CANISTER_ID ??
+      null,
+  };
+}
+
+export function resolveIcpRuntime(): IcpRuntime {
+  const env = safeGetCanisterEnv<MagickBoxCanisterEnv>();
+  const viteHost = import.meta.env.VITE_ICP_HOST;
+  const { canisterId, mediaCanisterId } = resolveCanisterIds(env);
+  const host = env ? currentOrigin() : viteHost ?? currentOrigin();
+  const reason = env
+    ? "ic_env detected from the ICP asset canister"
+    : "no ic_env cookie found; canister writes require the ICP asset canister unless Vite ICP env is supplied";
+
+  return {
+    canisterId,
+    mediaCanisterId,
+    host,
+    identityProvider: getIdentityProviderUrl(),
+    rootKey: env?.IC_ROOT_KEY,
+    reason,
+  };
+}
+
+export function canUseIcpRuntime(runtime: IcpRuntime) {
+  return Boolean(runtime.canisterId);
+}
+
+export function buildHttpAgentOptions(runtime: IcpRuntime, identity?: Identity) {
+  return {
+    host: runtime.host,
+    identity,
+    ...(runtime.rootKey ? { rootKey: runtime.rootKey } : {}),
+  };
+}
+
+export async function createCoreActor(identity?: Identity): Promise<CoreActor> {
+  const runtime = resolveIcpRuntime();
+
+  if (!runtime.canisterId) {
+    throw new Error(runtime.reason);
+  }
+
+  const agent = await HttpAgent.create(buildHttpAgentOptions(runtime, identity));
+
+  return Actor.createActor<_SERVICE>(idlFactory, {
+    agent,
+    canisterId: runtime.canisterId,
+  });
+}
+
+export async function createMediaActor(identity?: Identity): Promise<MediaActor> {
+  const runtime = resolveIcpRuntime();
+
+  if (!runtime.mediaCanisterId) {
+    throw new Error("ICP media canister id is unavailable from the asset canister runtime");
+  }
+
+  const agent = await HttpAgent.create(buildHttpAgentOptions(runtime, identity));
+
+  return Actor.createActor<MediaService>(mediaIdlFactory, {
+    agent,
+    canisterId: runtime.mediaCanisterId,
+  });
+}
+
+export function createAuthClient() {
+  return new AuthClient({
+    identityProvider: getIdentityProviderUrl(),
+    idleOptions: {
+      disableDefaultIdleCallback: true,
+    },
+  });
+}
+
+export function getOrCreateLocalBrowserIdentity() {
+  const stored = globalThis.localStorage?.getItem(localIdentityStorageKey);
+
+  if (stored) {
+    return Ed25519KeyIdentity.fromJSON(stored);
+  }
+
+  const identity = Ed25519KeyIdentity.generate();
+  globalThis.localStorage?.setItem(localIdentityStorageKey, JSON.stringify(identity.toJSON()));
+
+  return identity;
+}
+
+export function markLocalBrowserIdentityActive() {
+  globalThis.localStorage?.setItem(localIdentityActiveStorageKey, "true");
+}
+
+export function clearLocalBrowserIdentityActive() {
+  globalThis.localStorage?.removeItem(localIdentityActiveStorageKey);
+}
+
+export function hasActiveLocalBrowserIdentity() {
+  return globalThis.localStorage?.getItem(localIdentityActiveStorageKey) === "true";
+}
+
+export async function signInWithInternetIdentity(authClient: AuthClient) {
+  return authClient.signIn({
+    maxTimeToLive: eightHoursInNanoseconds,
+  });
+}
+
+export async function promptHash(prompt: string) {
+  if (globalThis.crypto?.subtle) {
+    const digest = await globalThis.crypto.subtle.digest(
+      "SHA-256",
+      new TextEncoder().encode(prompt),
+    );
+
+    return Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  let hash = 0;
+  for (let index = 0; index < prompt.length; index += 1) {
+    hash = (hash * 31 + prompt.charCodeAt(index)) >>> 0;
+  }
+
+  return `local-${hash.toString(16).padStart(8, "0")}`;
+}

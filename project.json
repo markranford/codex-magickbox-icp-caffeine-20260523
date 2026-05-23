@@ -1,25 +1,20 @@
 {
-  "overview": "A Caffeine-native control center for the isolated Magick Box on ICP prototype — configure external ICP canisters, manage provider endpoints, create payment intents, and explore the Magick Box UX without touching production systems.",
+  "overview": "Isolated Magick Box ICP preview prepared from the canonical Codex prototype repo. It preserves the observable Magick Box UX while moving auth, credits, jobs, payments, audit events, and media manifests toward ICP canisters.",
   "features": [
-    "Dark Magick Box UI shell with hero and navigation",
-    "Magick Friend composer with Image, Video, and Music modes",
-    "ICP canister configuration for core, media, ledger, ad verifier, and AI worker",
-    "Provider settings for FreeLLMAPI, OpenAI-compatible, MagickAI, and Ollama endpoints",
-    "Payment intent management with ICRC-2 transfer-from payloads and manual verification",
-    "icp-media:// manifest import and display",
-    "Gallery of locally generated media with job metadata",
-    "Job history with prompt, mode, provider, and status",
-    "System status dashboard showing live vs. external ICP vs. user-required features",
-    "Deployment checklist mapping control center features to real ICP canister steps"
+    "Magick Box landing, chat, gallery, pricing, settings, and admin routes",
+    "Internet Identity compatible owner login",
+    "ICP-first media manifests and copied reference media",
+    "Core canister state for credits, jobs, audit events, payment intents, ad credits, and inline media assets",
+    "Admin bootstrap and funding dashboard guarded away from demo users",
+    "Provider settings for MagickAI, FreeLLMAPI, OpenAI-compatible endpoints, and local Ollama"
   ],
-  "category": "control-panel",
+  "category": "ai-creator-tool",
   "tags": [
     "icp",
     "magick-box",
-    "web3",
-    "control-center",
-    "dark-theme",
-    "prototype"
+    "internet-identity",
+    "credits",
+    "media"
   ],
-  "last_updated": "2026-05-22T14:44:22.895Z"
+  "source": "https://github.com/markranford/magickbox-isolated-prototype-icp"
 }

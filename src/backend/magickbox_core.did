@@ -1,0 +1,223 @@
+type ResultText = variant { ok : text; err : text };
+type CreditOption = record {
+  id : text;
+  title : text;
+  description : text;
+  route : text;
+  requires_payment : bool;
+  on_icp : bool;
+};
+type ProviderOption = record {
+  id : text;
+  title : text;
+  description : text;
+  on_icp_owned_state : bool;
+  requires_external_worker : bool;
+  credit_cost : nat;
+};
+type Profile = record {
+  owner : principal;
+  display_name : text;
+  email : opt text;
+  credits : nat;
+  created_at : int;
+  updated_at : int;
+};
+type GenerationJob = record {
+  id : nat;
+  owner : principal;
+  mode : text;
+  provider_id : text;
+  prompt_preview : text;
+  prompt_hash : text;
+  status : text;
+  credit_cost : nat;
+  result_url : opt text;
+  result_hash : opt text;
+  created_at : int;
+  updated_at : int;
+};
+type CollectionRecord = record {
+  id : nat;
+  owner : principal;
+  name : text;
+  job_ids : vec nat;
+  is_public : bool;
+  created_at : int;
+  updated_at : int;
+};
+type AuditEvent = record {
+  id : nat;
+  caller : principal;
+  action : text;
+  subject : text;
+  metadata : text;
+  created_at : int;
+};
+type PaymentAccount = record {
+  owner : principal;
+  subaccount : opt blob;
+  ledger_id : principal;
+  token_symbol : text;
+  fee_e8s : nat;
+};
+type AdminAction = record {
+  id : text;
+  title : text;
+  description : text;
+  status : text;
+  route : text;
+  requires_superadmin : bool;
+};
+type SuperAdminStatus = record {
+  caller : principal;
+  is_superadmin : bool;
+  superadmin_count : nat;
+  bootstrap_available : bool;
+  system_wallet_owner : principal;
+  ledger_id : principal;
+};
+type SystemFundingWallet = record {
+  id : nat;
+  creator : principal;
+  account : PaymentAccount;
+  subaccount_hex : text;
+  status : text;
+  created_at : int;
+  verified_at : opt int;
+  balance_e8s : nat;
+};
+type SystemWallet = record {
+  account : PaymentAccount;
+  balance_e8s : nat;
+  funding_wallet : opt SystemFundingWallet;
+  requires_wallet_creation : bool;
+  funding_instructions : text;
+  cycles_note : text;
+};
+type AdminDashboard = record {
+  status : SuperAdminStatus;
+  wallet : SystemWallet;
+  profile_count : nat;
+  job_count : nat;
+  pending_payment_count : nat;
+  claimed_payment_count : nat;
+  media_manifest_count : nat;
+  worker_grant_count : nat;
+  worker_run_count : nat;
+  ad_credit_grant_count : nat;
+  audit_event_count : nat;
+  total_user_credits : nat;
+  actions : vec AdminAction;
+};
+type PaymentIntent = record {
+  id : nat;
+  owner : principal;
+  payment_principal : principal;
+  payment_subaccount : opt blob;
+  payment_subaccount_hex : text;
+  amount_e8s : nat;
+  credits : nat;
+  status : text;
+  ledger_block_index : opt nat;
+  created_at : int;
+  updated_at : int;
+};
+type WorkerGrant = record {
+  id : nat;
+  owner : principal;
+  worker : principal;
+  worker_label : text;
+  created_at : int;
+  revoked_at : opt int;
+};
+type WorkerRun = record {
+  id : nat;
+  job_id : nat;
+  owner : principal;
+  worker : principal;
+  provider_id : text;
+  result_url : text;
+  result_hash : text;
+  receipt : text;
+  output_preview : text;
+  created_at : int;
+};
+type AdCreditGrant = record {
+  id : nat;
+  owner : principal;
+  verifier : text;
+  proof_id : text;
+  credits : nat;
+  created_at : int;
+};
+type MediaAsset = record {
+  id : nat;
+  owner : principal;
+  job_id : nat;
+  stored_by : principal;
+  uri : text;
+  content_hash : text;
+  mime_type : text;
+  bytes : nat;
+  content : blob;
+  created_at : int;
+};
+type MediaManifest = record {
+  id : nat;
+  owner : principal;
+  job_id : nat;
+  attached_by : principal;
+  storage_provider : text;
+  uri : text;
+  content_hash : text;
+  mime_type : text;
+  bytes : nat;
+  created_at : int;
+};
+type CreateJobResult = variant {
+  ok : GenerationJob;
+  insufficient_credits : record {
+    required : nat;
+    balance : nat;
+    options : vec CreditOption;
+  };
+  err : text;
+};
+service : {
+  get_superadmin_status : () -> (SuperAdminStatus) query;
+  bootstrap_superadmin : (text) -> (variant { ok : SuperAdminStatus; err : text });
+  add_superadmin : (principal) -> (variant { ok : SuperAdminStatus; err : text });
+  remove_superadmin : (principal) -> (variant { ok : SuperAdminStatus; err : text });
+  create_system_funding_wallet : () -> (variant { ok : SystemFundingWallet; err : text });
+  get_system_wallet_status : () -> (variant { ok : SystemWallet; err : text });
+  get_admin_dashboard : () -> (variant { ok : AdminDashboard; err : text });
+  list_admin_audit_events : () -> (vec AuditEvent) query;
+  register_profile : (text, opt text) -> (variant { ok : Profile; err : text });
+  get_my_profile : () -> (opt Profile) query;
+  get_credit_options : () -> (vec CreditOption) query;
+  get_provider_options : () -> (vec ProviderOption) query;
+  get_payment_account : () -> (PaymentAccount) query;
+  get_payment_account_for_intent : (nat) -> (variant { ok : PaymentAccount; err : text }) query;
+  create_icp_payment_intent : (nat, nat) -> (variant { ok : PaymentIntent; err : text });
+  claim_icp_payment : (nat, nat) -> (variant { ok : PaymentIntent; err : text });
+  grant_ad_credits : (text, text, nat) -> (variant { ok : AdCreditGrant; err : text });
+  create_generation_job : (text, text, text, text, nat) -> (CreateJobResult);
+  authorize_worker : (principal, text) -> (variant { ok : WorkerGrant; err : text });
+  complete_worker_job : (nat, text, text, text, text) -> (variant { ok : GenerationJob; err : text });
+  complete_external_job : (nat, text, text) -> (variant { ok : GenerationJob; err : text });
+  store_media_asset : (nat, text, text, blob) -> (variant { ok : MediaAsset; err : text });
+  attach_media_manifest : (nat, text, text, text, text, nat) -> (variant { ok : MediaManifest; err : text });
+  save_to_collection : (nat, text, bool) -> (variant { ok : CollectionRecord; err : text });
+  list_my_jobs : () -> (vec GenerationJob) query;
+  list_my_collections : () -> (vec CollectionRecord) query;
+  list_audit_events : () -> (vec AuditEvent) query;
+  list_my_payment_intents : () -> (vec PaymentIntent) query;
+  list_my_worker_grants : () -> (vec WorkerGrant) query;
+  list_my_worker_runs : () -> (vec WorkerRun) query;
+  list_my_ad_credit_grants : () -> (vec AdCreditGrant) query;
+  list_my_media_assets : () -> (vec MediaAsset) query;
+  get_media_asset : (nat) -> (opt MediaAsset) query;
+  list_my_media_manifests : () -> (vec MediaManifest) query;
+  get_cycle_note : () -> (text) query;
+}

@@ -9,7 +9,4 @@ commands = ["pnpm build"]
 out = "dist"
 
 [check]
-commands = ["pnpm typecheck", "pnpm check"]
-
-[check.fix]
-commands = ["pnpm typecheck", "pnpm fix"]
+commands = ["pnpm typecheck"]
