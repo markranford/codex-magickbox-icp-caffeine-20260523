@@ -1,5 +1,5 @@
 {
-  "name": "@caffeine/codex-magickbox-on-icp",
+  "name": "@magickbox/magickboxv3-icp-builder-import",
   "type": "module",
   "engines": {
     "node": ">=16.0.0",

@@ -1,8 +1,8 @@
 manifest_version = "0.1.0"
 
 [project]
-id = "codex-magickbox-on-icp"
-name = "codex-magickbox-on-icp"
+id = "magickboxv3"
+name = "MagickBoxV3"
 
 [workspace]
 include = ["src/**"]

@@ -1,7 +1,7 @@
 {
-  "overview": "Isolated Magick Box ICP preview prepared from the canonical Codex prototype repo. It preserves the observable Magick Box UX while moving auth, credits, jobs, payments, audit events, and media manifests toward ICP canisters.",
+  "overview": "MagickBoxV3 isolated ICP preview prepared from the canonical Codex prototype repo. It preserves the observable Magick Box UX while moving auth, credits, jobs, payments, audit events, and media manifests toward ICP canisters.",
   "features": [
-    "Magick Box landing, chat, gallery, pricing, settings, and admin routes",
+    "MagickBoxV3 landing, chat, gallery, pricing, settings, and admin routes",
     "Internet Identity compatible owner login",
     "ICP-first media manifests and copied reference media",
     "Core canister state for credits, jobs, audit events, payment intents, ad credits, and inline media assets",
